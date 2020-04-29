@@ -51,14 +51,19 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	bottomOp.GeoM.Translate(0, topHeight-float64(bottomHeight)/2)
 	bottomOp.GeoM.Translate(screenWidth/2, screenHeight/2)
 
-	// /5 to slow down the animation
-	i := (g.count / 8) % frameNum
+	// slow down the animation. 1 is fast
+	slow := 8
+	i := (g.count / slow) % frameNum
 
 	bottomX, bottomY := bottom0X+i*bottomWidth, bottom0Y
-	screen.DrawImage(runnerImage.SubImage(image.Rect(bottomX, bottomY, bottomX+bottomWidth, bottomY+bottomHeight)).(*ebiten.Image), bottomOp)
+	if err := screen.DrawImage(runnerImage.SubImage(image.Rect(bottomX, bottomY, bottomX+bottomWidth, bottomY+bottomHeight)).(*ebiten.Image), bottomOp); err != nil {
+		log.Fatal(err)
+	}
 
 	topX, topY := top0X+i*topWidth, top0Y
-	screen.DrawImage(runnerImage.SubImage(image.Rect(topX, topY, topX+topWidth, topY+topHeight)).(*ebiten.Image), topOp)
+	if err := screen.DrawImage(runnerImage.SubImage(image.Rect(topX, topY, topX+topWidth, topY+topHeight)).(*ebiten.Image), topOp); err != nil {
+		log.Fatal(err)
+	}
 
 }
 
