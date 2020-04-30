@@ -6,9 +6,6 @@ help:
 run: ## Run the app
 	go run ./cmd/iron-snail/
 
-run_marco: ## Run the Marco character demo
-	go run ./cmd/marco/
-
 build: ## Build binary in the local env
 	go build -mod=vendor -i -v -o iron-snail-bin ./cmd/iron-snail/
 

@@ -38,6 +38,11 @@ github.com/hajimehoshi/ebiten/internal/uidriver/glfw
 github.com/hajimehoshi/ebiten/internal/uidriver/js
 github.com/hajimehoshi/ebiten/internal/uidriver/mobile
 github.com/hajimehoshi/ebiten/internal/web
+# github.com/konsorten/go-windows-terminal-sequences v1.0.1
+github.com/konsorten/go-windows-terminal-sequences
+# github.com/sirupsen/logrus v1.5.0
+## explicit
+github.com/sirupsen/logrus
 # golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56
 golang.org/x/exp/shiny/driver/gldriver
 golang.org/x/exp/shiny/driver/internal/drawer
@@ -62,4 +67,5 @@ golang.org/x/mobile/geom
 golang.org/x/mobile/gl
 golang.org/x/mobile/internal/mobileinit
 # golang.org/x/sys v0.0.0-20191026070338-33540a1f6037
+golang.org/x/sys/unix
 golang.org/x/sys/windows
