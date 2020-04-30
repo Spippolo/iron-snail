@@ -20,7 +20,7 @@ type Character interface {
 
 type Marco struct {
 	tick     int
-	speed    int
+	speed    int // slow down the animation. 1 is fast
 	frameNum int
 
 	bottomWidth  int
@@ -74,40 +74,33 @@ func (c *Marco) Update(tick int) {
 }
 
 func (c *Marco) Draw() *ebiten.Image {
-	// var marco *ebiten.Image
 	marco, err := ebiten.NewImage(c.frameWidth(), c.frameHeight(), ebiten.FilterNearest)
 	if err != nil {
 		log.Fatal(err)
 	}
 	marco.Fill(color.White)
-	// x, y := marco.Size()
-	// log.Infof("Size: %d %d", x, y)
 
-	topOp := &ebiten.DrawImageOptions{}
-	// topOp.GeoM.Translate(-float64(c.topWidth)/2, -float64(c.topHeight)/2)
-	// topOp.GeoM.Translate(screenWidth/2, screenHeight/2)
-
-	bottomOp := &ebiten.DrawImageOptions{}
-	// bottomOp.GeoM.Translate(-float64(c.topWidth)/2, -float64(c.topHeight)/2)
-	bottomOp.GeoM.Translate(0, float64(c.topHeight)-float64(c.bottomHeight)/2)
-	// bottomOp.GeoM.Translate(screenWidth/2, screenHeight/2)
-
-	// slow down the animation. 1 is fast
-	i := (c.tick / c.speed) % c.frameNum
-
-	bottomX, bottomY := c.bottom0X+i*c.bottomWidth, c.bottom0Y
-	if err := marco.DrawImage(
-		sprite.SubImage(
-			image.Rect(bottomX, bottomY, bottomX+c.bottomWidth, bottomY+c.bottomHeight),
-		).(*ebiten.Image),
-		bottomOp); err != nil {
+	frame := (c.tick / c.speed) % c.frameNum
+	if err := marco.DrawImage(c.drawLegs(frame)); err != nil {
 		log.Fatal(err)
 	}
 
-	topX, topY := c.top0X+i*c.topWidth, c.top0Y
-	if err := marco.DrawImage(sprite.SubImage(image.Rect(topX, topY, topX+c.topWidth, topY+c.topHeight)).(*ebiten.Image), topOp); err != nil {
+	if err := marco.DrawImage(c.drawBody(frame)); err != nil {
 		log.Fatal(err)
 	}
 
 	return marco
+}
+
+func (c *Marco) drawBody(frame int) (*ebiten.Image, *ebiten.DrawImageOptions) {
+	options := &ebiten.DrawImageOptions{}
+	topX, topY := c.top0X+frame*c.topWidth, c.top0Y
+	return sprite.SubImage(image.Rect(topX, topY, topX+c.topWidth, topY+c.topHeight)).(*ebiten.Image), options
+}
+
+func (c *Marco) drawLegs(frame int) (*ebiten.Image, *ebiten.DrawImageOptions) {
+	options := &ebiten.DrawImageOptions{}
+	options.GeoM.Translate(0, float64(c.topHeight)-float64(c.bottomHeight)/2)
+	bottomX, bottomY := c.bottom0X+frame*c.bottomWidth, c.bottom0Y
+	return sprite.SubImage(image.Rect(bottomX, bottomY, bottomX+c.bottomWidth, bottomY+c.bottomHeight)).(*ebiten.Image), options
 }
