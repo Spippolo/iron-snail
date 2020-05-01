@@ -27,17 +27,18 @@ func (g *Game) Update(screen *ebiten.Image) error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(screenWidth/2, screenHeight/2)
+	// op.GeoM.Translate(screenWidth/2, screenHeight/2)
 	// In case we're drawing multiple characters, draw them one near the other (and not over)
 	var xOffset int
 	for _, c := range g.characters {
 		op.GeoM.Translate(float64(xOffset), 0)
-		i := c.Draw()
+		i := c.Draw(screen)
 		if err := screen.DrawImage(i, op); err != nil {
 			log.Fatal(err)
 		}
 		xOffset, _ = i.Size()
 	}
+
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {

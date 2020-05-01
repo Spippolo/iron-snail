@@ -4,112 +4,48 @@ import (
 	"image"
 	"image/color"
 
+	"github.com/Spippolo/iron-snail/sprites"
+	"github.com/Spippolo/iron-snail/utils"
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	sprite *ebiten.Image
-)
-
-type tile struct {
-	x0 int
-	y0 int
-	w  int
-	h  int
-}
-
 type Character interface {
 	Update(int)
-	Draw() *ebiten.Image
+	Draw(screen *ebiten.Image) *ebiten.Image
 }
-
-type part string
-
-const (
-	legsStandingPart part = "legs-standing"
-	legsRunningPart       = "legs-running"
-	bodyStandingPart      = "body-standing"
-	bodyShootingPart      = "body-shooting"
-)
 
 type Marco struct {
-	tick        int
-	speed       int // slow down the animation. 1 is fast
-	legsYOffset int // TODO: Bad design. This is the amount of pixels the legs must be moved down to be in the correct position compared to the body
-
-	parts map[part][]*tile
-}
-
-func init() {
-	var err error
-	sprite, _, err = ebitenutil.NewImageFromFile("./assets/11226.gif", ebiten.FilterDefault)
-	if err != nil {
-		log.Fatal(err)
-	}
+	tick   int
+	speed  int // slow down the animation. 1 is fast
+	sprite *sprites.Sprite
 }
 
 func NewMarco() *Marco {
-	m := Marco{
-		speed: 8,
-		parts: make(map[part][]*tile),
+	return &Marco{
+		speed:  15,
+		sprite: sprites.Marco(),
 	}
-
-	m.parts[legsStandingPart] = m.buildParts(legsStandingPart)
-	m.parts[bodyStandingPart] = m.buildParts(bodyStandingPart)
-	return &m
-}
-
-func (c *Marco) buildParts(pName part) []*tile {
-	t := []*tile{}
-	switch pName {
-	case legsStandingPart:
-		x0 := 155
-		y0 := 1536
-		w := 24
-		h := 16
-		for i := 0; i < 4; i++ {
-			t = append(t, &tile{x0: x0 + w*i, y0: y0, w: w, h: h})
-		}
-		return t
-	case bodyStandingPart:
-		x0 := 12
-		y0 := 8
-		w := 33
-		h := 29
-		c.legsYOffset = h
-		for i := 0; i < 4; i++ {
-			t = append(t, &tile{x0: x0 + w*i, y0: y0, w: w, h: h})
-		}
-		return t
-	default:
-		log.Fatalf("Unknown part %s", pName)
-	}
-	return nil
 }
 
 func (c *Marco) Update(tick int) {
 	c.tick = tick
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
+func (c *Marco) Draw(screen *ebiten.Image) *ebiten.Image {
 
-func (c *Marco) Draw() *ebiten.Image {
-	legsImage, legsOptions := c.drawLegs(c.legsYOffset)
+	legsImage, legsOptions, _ := c.drawLegs()
 	legsW, legsH := legsImage.Size()
 
-	bodyImage, bodyOptions := c.drawBody()
+	bodyImage, bodyOptions, YOffset := c.drawBody()
 	bodyW, bodyH := bodyImage.Size()
+	bodyH -= YOffset
+	frameHeight := bodyH + legsH
+	// Move Marco at the bottom of the image
+	legsOptions.GeoM.Translate(0, float64(frameHeight-legsH))
+	bodyOptions.GeoM.Translate(0, float64(frameHeight-2*legsH-YOffset))
 
-	frameHeight := bodyH + legsH - int(float64(legsH)/2)
-
-	marco, err := ebiten.NewImage(max(legsW, bodyW), frameHeight, ebiten.FilterNearest)
+	marco, err := ebiten.NewImage(utils.Max(legsW, bodyW), frameHeight, ebiten.FilterNearest)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -126,22 +62,20 @@ func (c *Marco) Draw() *ebiten.Image {
 	return marco
 }
 
-func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions) {
-	// Number of frames for this part
-	frameNum := len(c.parts[bodyStandingPart])
-	frame := (c.tick / c.speed) % frameNum
-	t := c.parts[bodyStandingPart][frame]
-	options := &ebiten.DrawImageOptions{}
-	return sprite.SubImage(image.Rect(t.x0, t.y0, t.x0+t.w, t.y0+t.h)).(*ebiten.Image), options
+func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, int) {
+	return c.drawPart(sprites.BodyStandingPart)
 }
 
-func (c *Marco) drawLegs(offset int) (*ebiten.Image, *ebiten.DrawImageOptions) {
-	// Number of frames for this part
-	frameNum := len(c.parts[legsStandingPart])
-	frame := (c.tick / c.speed) % frameNum
-	t := c.parts[legsStandingPart][frame]
+func (c *Marco) drawLegs() (*ebiten.Image, *ebiten.DrawImageOptions, int) {
+	return c.drawPart(sprites.LegsStandingPart)
+}
 
+func (c *Marco) drawPart(part sprites.BodyPart) (*ebiten.Image, *ebiten.DrawImageOptions, int) {
+	s := c.sprite.Desc[part]
+	// Number of frames for this part
+	frameNum := len(s.Tiles)
+	frame := (c.tick / c.speed) % frameNum
+	t := s.Tiles[frame]
 	options := &ebiten.DrawImageOptions{}
-	options.GeoM.Translate(0, float64(offset)-float64(t.h)/2)
-	return sprite.SubImage(image.Rect(t.x0, t.y0, t.x0+t.w, t.y0+t.h)).(*ebiten.Image), options
+	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), options, t.YOffset
 }
