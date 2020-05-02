@@ -26,17 +26,17 @@ type Sprite struct {
 }
 
 type SpriteDesc struct {
-	Speed int
-	Tiles []*TileDesc
+	Speed  int
+	Frames int
+	Tiles  []*TileDesc
 }
 
 type TileDesc struct {
-	X0      int
-	Y0      int
-	W       int
-	H       int
-	XOffset int `json:"x_offset"` // Tells how much th image below this one must be moved right/left to be visually correct
-	YOffset int `json:"y_offset"` // Tells how much th image below this one must be moved up to be visually correct. Think to the legs compared to a body, they must be attached to the body but the body image can have some space below the belt
+	X0    int
+	Y0    int
+	W     int
+	H     int
+	Joint [2]int // The point (x,y) in the image that must be places over the joint in another image to build a grouped image. The (0,0) point is the first top-left pixel
 }
 
 func Marco() *Sprite {
@@ -45,12 +45,17 @@ func Marco() *Sprite {
 	j, err := ioutil.ReadFile("./assets/marco.json")
 	utils.CheckErr(err, "Error reading json file")
 
-	var s map[BodyPart]*SpriteDesc
-	err = json.Unmarshal(j, &s)
+	var sprite map[BodyPart]*SpriteDesc
+	err = json.Unmarshal(j, &sprite)
 	utils.CheckErr(err, "Cannot unmarshal sprite")
+
+	// Set sprite frame numbers so that we can avoid calculating it each frame
+	for _, s := range sprite {
+		s.Frames = len(s.Tiles)
+	}
 
 	return &Sprite{
 		Image: img,
-		Desc:  s,
+		Desc:  sprite,
 	}
 }

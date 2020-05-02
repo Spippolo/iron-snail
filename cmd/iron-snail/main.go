@@ -6,7 +6,6 @@ import (
 	"github.com/Spippolo/iron-snail/characters"
 	"github.com/Spippolo/iron-snail/utils"
 	"github.com/hajimehoshi/ebiten"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -58,12 +57,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// op.GeoM.Translate(screenWidth/2, screenHeight/2)
 
 	i := g.character.Draw()
-	_, h := i.Size()
-	op.GeoM.Translate(screenWidth/2, screenHeight/2-float64(h))
+	// w, h := i.Size()
+	// op.GeoM.Translate(screenWidth/2-float64(w), screenHeight/2-float64(h))
 	if err := screen.DrawImage(i, op); err != nil {
 		log.Fatal(err)
 	}
-	ebitenutil.DebugPrint(screen, "Press D, E, W")
+	// ebitenutil.DebugPrint(screen, "Press D, E, W")
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
