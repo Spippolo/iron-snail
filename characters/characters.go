@@ -32,6 +32,8 @@ const (
 	Stand Action = iota
 	Walk
 	Shoot
+	Knife
+	KnifeUp
 	Jump
 	JumpShoot
 	Crouch
@@ -83,22 +85,20 @@ func (c *Marco) Update(tick int) error {
 }
 
 func (c *Marco) Draw() *ebiten.Image {
-	legsImage, legsOptions, _ := c.drawLegs()
+	legsImage, legsOptions, _, _ := c.drawLegs()
 	legsW, legsH := legsImage.Size()
 
-	bodyImage, bodyOptions, YOffset := c.drawBody()
+	bodyImage, bodyOptions, _, YOffset := c.drawBody()
 	bodyW, bodyH := bodyImage.Size()
-	// bodyH -= YOffset
+	frameWidth := utils.Max(legsW, bodyW)
 	frameHeight := bodyH - YOffset + legsH
-	// Move Marco at the bottom of the image
-	// legsOptions.GeoM.Translate(0, float64(frameHeight-legsH))
-	// bodyOptions.GeoM.Translate(0, float64(frameHeight-2*legsH-YOffset))
 
 	bodyOptions.GeoM.Translate(0, float64(-bodyH+YOffset))
 
 	legsOptions.GeoM.Translate(0, float64(frameHeight-legsH))
 	bodyOptions.GeoM.Translate(0, float64(frameHeight-legsH))
-	marco, err := ebiten.NewImage(utils.Max(legsW, bodyW), frameHeight, ebiten.FilterNearest)
+
+	marco, err := ebiten.NewImage(frameWidth, frameHeight, ebiten.FilterNearest)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,27 +115,31 @@ func (c *Marco) Draw() *ebiten.Image {
 	return marco
 }
 
-func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, int) {
+func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, int, int) {
 	a := c.CurrentAction()
 	var part sprites.BodyPart
 	if a == Stand {
 		part = sprites.BodyStandingPart
 	} else if a == Shoot {
 		part = sprites.BodyShootingPart
+	} else if a == Knife {
+		part = sprites.BodyKnifePart
+	} else if a == KnifeUp {
+		part = sprites.BodyKnifeUpPart
 	}
 	return c.drawPart(part)
 }
 
-func (c *Marco) drawLegs() (*ebiten.Image, *ebiten.DrawImageOptions, int) {
+func (c *Marco) drawLegs() (*ebiten.Image, *ebiten.DrawImageOptions, int, int) {
 	return c.drawPart(sprites.LegsStandingPart)
 }
 
-func (c *Marco) drawPart(part sprites.BodyPart) (*ebiten.Image, *ebiten.DrawImageOptions, int) {
+func (c *Marco) drawPart(part sprites.BodyPart) (*ebiten.Image, *ebiten.DrawImageOptions, int, int) {
 	s := c.sprite.Desc[part]
 	// Number of frames for this part
 	frameNum := len(s.Tiles)
 	frame := (c.currentFrame / (*c.sprite.Desc[part]).Speed) % frameNum
 	t := s.Tiles[frame]
 	options := &ebiten.DrawImageOptions{}
-	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), options, t.YOffset
+	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), options, t.XOffset, t.YOffset
 }

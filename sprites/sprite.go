@@ -16,6 +16,8 @@ const (
 	LegsRunningPart  BodyPart = "legs-running-base"
 	BodyStandingPart BodyPart = "body-standing-base"
 	BodyShootingPart BodyPart = "body-shooting-base"
+	BodyKnifePart    BodyPart = "body-knife-base"
+	BodyKnifeUpPart  BodyPart = "body-knife-up"
 )
 
 type Sprite struct {
@@ -33,6 +35,7 @@ type TileDesc struct {
 	Y0      int
 	W       int
 	H       int
+	XOffset int `json:"x_offset"` // Tells how much th image below this one must be moved right/left to be visually correct
 	YOffset int `json:"y_offset"` // Tells how much th image below this one must be moved up to be visually correct. Think to the legs compared to a body, they must be attached to the body but the body image can have some space below the belt
 }
 
