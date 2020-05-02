@@ -54,11 +54,9 @@ func (g *Game) Update(screen *ebiten.Image) error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.White)
 	op := &ebiten.DrawImageOptions{}
-	// op.GeoM.Translate(screenWidth/2, screenHeight/2)
 
-	i := g.character.Draw()
-	// w, h := i.Size()
-	// op.GeoM.Translate(screenWidth/2-float64(w), screenHeight/2-float64(h))
+	i, center := g.character.Draw()
+	op.GeoM.Translate(screenWidth/2-float64(center[0]), screenHeight/2-float64(center[1]))
 	if err := screen.DrawImage(i, op); err != nil {
 		log.Fatal(err)
 	}

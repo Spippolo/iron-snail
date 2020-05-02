@@ -3,6 +3,7 @@ package characters
 import (
 	"image"
 	"image/color"
+	"math"
 
 	"github.com/Spippolo/iron-snail/sprites"
 	"github.com/Spippolo/iron-snail/utils"
@@ -12,7 +13,7 @@ import (
 
 type Character interface {
 	Update(int) error
-	Draw() *ebiten.Image
+	Draw() (*ebiten.Image, [2]int)
 	MakeAction(a Action) error
 	CurrentAction() Action
 	SetDirection(d Direction) error
@@ -84,17 +85,21 @@ func (c *Marco) Update(tick int) error {
 	return nil
 }
 
-func (c *Marco) Draw() *ebiten.Image {
+func (c *Marco) Draw() (*ebiten.Image, [2]int) {
 	legsImage, legsOptions, legsJoint := c.drawLegs()
 	legsW, legsH := legsImage.Size()
 
 	bodyImage, bodyOptions, bodyJoint := c.drawBody()
 	bodyW, _ := bodyImage.Size()
 
-	legsOptions.GeoM.Translate(float64(-legsJoint[0]), float64(-legsJoint[1]))
-	legsOptions.GeoM.Translate(float64(bodyJoint[0]), float64(bodyJoint[1]))
+	// body and legs can move right/left during an animation, creating difference of size
+	// so we take into account that difference to calculate to total width of the image and its
+	// horizontal translation
+	jointDiff := math.Abs(float64(bodyJoint[0] - legsJoint[0]))
 
-	frameWidth := utils.Max(legsW, bodyW)
+	legsOptions.GeoM.Translate(jointDiff, float64(bodyJoint[1]-legsJoint[1]))
+
+	frameWidth := utils.Max(legsW+int(jointDiff), bodyW+int(jointDiff))
 	frameHeight := bodyJoint[1] + legsH - legsJoint[1]
 	marco, err := ebiten.NewImage(frameWidth, frameHeight, ebiten.FilterNearest)
 	utils.CheckErr(err, "Cannot create image for Marco")
@@ -108,7 +113,7 @@ func (c *Marco) Draw() *ebiten.Image {
 		log.Fatal(err)
 	}
 
-	return marco
+	return marco, bodyJoint
 }
 
 func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
