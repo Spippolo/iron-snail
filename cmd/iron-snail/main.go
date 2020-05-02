@@ -51,15 +51,13 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.White)
 	op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Translate(screenWidth/2, screenHeight/2)
-	// In case we're drawing multiple characters, draw them one near the other (and not over)
-	var xOffset int
-	op.GeoM.Translate(float64(xOffset), 0)
-	i := g.character.Draw(screen)
+
+	i := g.character.Draw()
+	_, h := i.Size()
+	op.GeoM.Translate(screenWidth/2, screenHeight/2-float64(h))
 	if err := screen.DrawImage(i, op); err != nil {
 		log.Fatal(err)
 	}
-	xOffset, _ = i.Size()
-
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {

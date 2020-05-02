@@ -12,7 +12,7 @@ import (
 
 type Character interface {
 	Update(int) error
-	Draw(screen *ebiten.Image) *ebiten.Image
+	Draw() *ebiten.Image
 	MakeAction(a Action) error
 	CurrentAction() Action
 	SetDirection(d Direction) error
@@ -82,18 +82,22 @@ func (c *Marco) Update(tick int) error {
 	return nil
 }
 
-func (c *Marco) Draw(screen *ebiten.Image) *ebiten.Image {
+func (c *Marco) Draw() *ebiten.Image {
 	legsImage, legsOptions, _ := c.drawLegs()
 	legsW, legsH := legsImage.Size()
 
 	bodyImage, bodyOptions, YOffset := c.drawBody()
 	bodyW, bodyH := bodyImage.Size()
-	bodyH -= YOffset
-	frameHeight := bodyH + legsH
+	// bodyH -= YOffset
+	frameHeight := bodyH - YOffset + legsH
 	// Move Marco at the bottom of the image
-	legsOptions.GeoM.Translate(0, float64(frameHeight-legsH))
-	bodyOptions.GeoM.Translate(0, float64(frameHeight-2*legsH-YOffset))
+	// legsOptions.GeoM.Translate(0, float64(frameHeight-legsH))
+	// bodyOptions.GeoM.Translate(0, float64(frameHeight-2*legsH-YOffset))
 
+	bodyOptions.GeoM.Translate(0, float64(-bodyH+YOffset))
+
+	legsOptions.GeoM.Translate(0, float64(frameHeight-legsH))
+	bodyOptions.GeoM.Translate(0, float64(frameHeight-legsH))
 	marco, err := ebiten.NewImage(utils.Max(legsW, bodyW), frameHeight, ebiten.FilterNearest)
 	if err != nil {
 		log.Fatal(err)
