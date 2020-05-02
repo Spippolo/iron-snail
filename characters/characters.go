@@ -11,29 +11,78 @@ import (
 )
 
 type Character interface {
-	Update(int)
+	Update(int) error
 	Draw(screen *ebiten.Image) *ebiten.Image
+	MakeAction(a Action) error
+	CurrentAction() Action
+	SetDirection(d Direction) error
+	CurrentDirection() Direction
 }
 
+type Direction int
+
+const (
+	Right Direction = iota
+	Left
+)
+
+type Action int
+
+const (
+	Stand Action = iota
+	Walk
+	Shoot
+	Jump
+	JumpShoot
+	Crouch
+	CrouchWalk
+)
+
 type Marco struct {
-	tick   int
-	speed  int // slow down the animation. 1 is fast
-	sprite *sprites.Sprite
+	tick         int
+	currentFrame int // number of frame in the current animation
+	sprite       *sprites.Sprite
+	action       Action
+	direction    Direction
 }
 
 func NewMarco() *Marco {
 	return &Marco{
-		speed:  15,
 		sprite: sprites.Marco(),
 	}
 }
 
-func (c *Marco) Update(tick int) {
+func (c *Marco) CurrentDirection() Direction {
+	return c.direction
+}
+
+func (c *Marco) SetDirection(d Direction) error {
+	// TODO: optional: validate direction
+	c.direction = d
+	return nil
+}
+
+func (c *Marco) CurrentAction() Action {
+	return c.action
+}
+
+func (c *Marco) MakeAction(action Action) error {
+	log.Debugf("Action %d", action)
+	// TODO: optional: validate action
+	c.action = action
+	// Reset the animation
+	// TODO: some actions can't be reset, like shooting, and must be completed before resetting
+	c.currentFrame = 0
+	return nil
+}
+
+func (c *Marco) Update(tick int) error {
 	c.tick = tick
+	c.currentFrame++
+	return nil
 }
 
 func (c *Marco) Draw(screen *ebiten.Image) *ebiten.Image {
-
 	legsImage, legsOptions, _ := c.drawLegs()
 	legsW, legsH := legsImage.Size()
 
@@ -63,7 +112,14 @@ func (c *Marco) Draw(screen *ebiten.Image) *ebiten.Image {
 }
 
 func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, int) {
-	return c.drawPart(sprites.BodyStandingPart)
+	a := c.CurrentAction()
+	var part sprites.BodyPart
+	if a == Stand {
+		part = sprites.BodyStandingPart
+	} else if a == Shoot {
+		part = sprites.BodyShootingPart
+	}
+	return c.drawPart(part)
 }
 
 func (c *Marco) drawLegs() (*ebiten.Image, *ebiten.DrawImageOptions, int) {
@@ -74,7 +130,7 @@ func (c *Marco) drawPart(part sprites.BodyPart) (*ebiten.Image, *ebiten.DrawImag
 	s := c.sprite.Desc[part]
 	// Number of frames for this part
 	frameNum := len(s.Tiles)
-	frame := (c.tick / c.speed) % frameNum
+	frame := (c.currentFrame / (*c.sprite.Desc[part]).Speed) % frameNum
 	t := s.Tiles[frame]
 	options := &ebiten.DrawImageOptions{}
 	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), options, t.YOffset

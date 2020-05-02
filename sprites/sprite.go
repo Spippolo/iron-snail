@@ -24,6 +24,7 @@ type Sprite struct {
 }
 
 type SpriteDesc struct {
+	Speed int
 	Tiles []*TileDesc
 }
 
