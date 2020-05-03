@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 
 	"github.com/Spippolo/iron-snail/characters"
 	"github.com/Spippolo/iron-snail/utils"
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,7 +62,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if err := screen.DrawImage(i, op); err != nil {
 		log.Fatal(err)
 	}
-	// ebitenutil.DebugPrint(screen, "Press D, E, W")
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %f", ebiten.CurrentTPS()))
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
