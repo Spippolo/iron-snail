@@ -7,22 +7,24 @@ import (
 	"github.com/Spippolo/iron-snail/utils"
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
+	log "github.com/sirupsen/logrus"
 )
 
-type BodyPart string
+type SpriteName string
 
 const (
-	LegsStandingPart BodyPart = "legs-standing-base"
-	LegsRunningPart  BodyPart = "legs-running-base"
-	BodyStandingPart BodyPart = "body-standing-base"
-	BodyShootingPart BodyPart = "body-shooting-base"
-	BodyKnifePart    BodyPart = "body-knife-base"
-	BodyKnifeUpPart  BodyPart = "body-knife-up"
+	LegsStandingPart SpriteName = "legs-standing-base"
+	LegsRunningPart  SpriteName = "legs-running-base"
+	BodyStandingPart SpriteName = "body-standing-base"
+	BodyShootingPart SpriteName = "body-shooting-base"
+	BodyKnifePart    SpriteName = "body-knife-base"
+	BodyKnifeUpPart  SpriteName = "body-knife-up"
+	BulletBase       SpriteName = "bullet-base"
 )
 
 type Sprite struct {
 	Image *ebiten.Image
-	Desc  map[BodyPart]*SpriteDesc
+	Desc  map[SpriteName]*SpriteDesc
 }
 
 type SpriteDesc struct {
@@ -39,13 +41,32 @@ type TileDesc struct {
 	Joint [2]int // The point (x,y) in the image that must be places over the joint in another image to build a grouped image. The (0,0) point is the first top-left pixel
 }
 
+var weapons *Sprite
+var marco *Sprite
+
+func Weapons() *Sprite {
+	if weapons == nil {
+		log.Debug("Generating weapons")
+		weapons = buildSprite("./assets/weapons.png", "./assets/weapons.json")
+	}
+	return weapons
+}
+
 func Marco() *Sprite {
-	img, _, err := ebitenutil.NewImageFromFile("./assets/marco.gif", ebiten.FilterDefault)
+	if marco == nil {
+		log.Debug("Generating Marco")
+		marco = buildSprite("./assets/marco.gif", "./assets/marco.json")
+	}
+	return marco
+}
+
+func buildSprite(imgPath, specPath string) *Sprite {
+	img, _, err := ebitenutil.NewImageFromFile(imgPath, ebiten.FilterDefault)
 	utils.CheckErr(err, "Error reading image file")
-	j, err := ioutil.ReadFile("./assets/marco.json")
+	j, err := ioutil.ReadFile(specPath)
 	utils.CheckErr(err, "Error reading json file")
 
-	var sprite map[BodyPart]*SpriteDesc
+	var sprite map[SpriteName]*SpriteDesc
 	err = json.Unmarshal(j, &sprite)
 	utils.CheckErr(err, "Cannot unmarshal sprite")
 

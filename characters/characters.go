@@ -5,27 +5,25 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/Spippolo/iron-snail/common"
 	"github.com/Spippolo/iron-snail/sprites"
 	"github.com/Spippolo/iron-snail/utils"
+	"github.com/Spippolo/iron-snail/weapons"
 	"github.com/hajimehoshi/ebiten"
 	log "github.com/sirupsen/logrus"
 )
 
 type Character interface {
-	Update(int) error
+	Update()
 	Draw() (*ebiten.Image, [2]int)
 	MakeAction(a Action) error
+	CurrentWeapon() weapons.Weapon
+	SetWeapon(weapons.Weapon)
 	CurrentAction() Action
-	SetDirection(d Direction) error
-	CurrentDirection() Direction
+	GetDirection() common.Direction
+	SetDirection(d common.Direction) error
+	CurrentDirection() common.Direction
 }
-
-type Direction int
-
-const (
-	Right Direction = iota
-	Left
-)
 
 type Action int
 
@@ -42,27 +40,40 @@ const (
 )
 
 type Marco struct {
-	tick         int
 	currentFrame int // number of frame in the current animation
 	sprite       *sprites.Sprite
 	action       Action
-	direction    Direction
+	direction    common.Direction
+	weapon       weapons.Weapon
 }
 
 func NewMarco() *Marco {
 	return &Marco{
 		sprite: sprites.Marco(),
+		weapon: weapons.Gun,
 	}
 }
 
-func (c *Marco) CurrentDirection() Direction {
+func (c *Marco) CurrentWeapon() weapons.Weapon {
+	return c.weapon
+}
+
+func (c *Marco) SetWeapon(w weapons.Weapon) {
+	c.weapon = w
+}
+
+func (c *Marco) CurrentDirection() common.Direction {
 	return c.direction
 }
 
-func (c *Marco) SetDirection(d Direction) error {
+func (c *Marco) SetDirection(d common.Direction) error {
 	// TODO: optional: validate direction
 	c.direction = d
 	return nil
+}
+
+func (c *Marco) GetDirection() common.Direction {
+	return c.direction
 }
 
 func (c *Marco) CurrentAction() Action {
@@ -79,10 +90,8 @@ func (c *Marco) MakeAction(action Action) error {
 	return nil
 }
 
-func (c *Marco) Update(tick int) error {
-	c.tick = tick
+func (c *Marco) Update() {
 	c.currentFrame++
-	return nil
 }
 
 func (c *Marco) Draw() (*ebiten.Image, [2]int) {
@@ -118,7 +127,7 @@ func (c *Marco) Draw() (*ebiten.Image, [2]int) {
 
 func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
 	a := c.CurrentAction()
-	var part sprites.BodyPart
+	var part sprites.SpriteName
 	if a == Stand {
 		part = sprites.BodyStandingPart
 	} else if a == Shoot {
@@ -135,10 +144,10 @@ func (c *Marco) drawLegs() (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
 	return c.drawPart(sprites.LegsStandingPart)
 }
 
-func (c *Marco) drawPart(part sprites.BodyPart) (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
+func (c *Marco) drawPart(part sprites.SpriteName) (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
 	s := c.sprite.Desc[part]
 	// Number of frames for this part
-	frame := (c.currentFrame / (*c.sprite.Desc[part]).Speed) % s.Frames
+	frame := (c.currentFrame / s.Speed) % s.Frames
 	t := s.Tiles[frame]
 	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), &ebiten.DrawImageOptions{}, t.Joint
 }
