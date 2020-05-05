@@ -16,14 +16,13 @@ import (
 type Character interface {
 	Update()
 	Draw() (*ebiten.Image, [2]int)
-	MakeAction(a Action) error
+	MakeAction(a Action) bool
 	CurrentWeapon() weapons.Weapon
 	SetWeapon(weapons.Weapon)
 	CurrentAction() Action
 	GetDirection() common.Direction
 	SetDirection(d common.Direction) error
 	CurrentDirection() common.Direction
-	FirstFrame() bool
 }
 
 type Action int
@@ -41,19 +40,22 @@ const (
 )
 
 type Marco struct {
-	currentFrame int // number of frame in the current animation
-	sprite       *sprites.Sprite
-	action       Action
-	direction    common.Direction
-	weapon       weapons.Weapon
-	firstFrame   bool
+	tick            int
+	sprite          *sprites.Sprite
+	action          Action
+	direction       common.Direction
+	weapon          weapons.Weapon
+	bodyPart        sprites.SpriteName // Current body part to be drawn
+	legsPart        sprites.SpriteName // Current legs part to be drawn
+	lastActionFrame bool
 }
 
 func NewMarco() *Marco {
 	return &Marco{
-		sprite:     sprites.Marco(),
-		weapon:     weapons.Gun,
-		firstFrame: true,
+		sprite:   sprites.Marco(),
+		weapon:   weapons.Gun,
+		bodyPart: sprites.BodyStandingPart,
+		legsPart: sprites.LegsStandingPart,
 	}
 }
 
@@ -83,31 +85,73 @@ func (c *Marco) CurrentAction() Action {
 	return c.action
 }
 
-func (c *Marco) MakeAction(action Action) error {
-	log.Debugf("Action %d", action)
-	// TODO: optional: validate action
-	c.action = action
-	// Reset the animation
-	// TODO: some actions can't be reset, like shooting, and must be completed before resetting
-	c.currentFrame = 0
-	c.firstFrame = true
-	return nil
+// Can actually perform an action if it's standing. It's not possible to interrupt an ongoing action
+func (c *Marco) canPerform(action Action) bool {
+	return c.action == Stand
 }
 
-func (c *Marco) FirstFrame() bool {
-	return c.firstFrame
+func (c *Marco) MakeAction(action Action) bool {
+	if !c.canPerform(action) {
+		return false
+	}
+	log.Debugf("Action %d", action)
+
+	if action == Stand {
+		c.bodyPart = sprites.BodyStandingPart
+	} else if action == Shoot {
+		c.bodyPart = sprites.BodyShootingPart
+	} else if action == Knife {
+		c.bodyPart = sprites.BodyKnifePart
+	} else if action == KnifeUp {
+		c.bodyPart = sprites.BodyKnifeUpPart
+	} else {
+		log.Fatalf("Unknown action %v", action)
+	}
+	c.action = action
+
+	c.legsPart = sprites.LegsStandingPart
+
+	// Reset the animation
+	c.tick = 0
+	return true
 }
 
 func (c *Marco) Update() {
-	c.currentFrame++
+	c.tick++
+
+	// The previous Update calculated it was the last tick for the action, so we need to
+	// reset Marco to its rest position
+	if c.lastActionFrame {
+		c.resetAction()
+	}
+}
+
+func (c *Marco) resetAction() {
+	c.tick = 0
+	c.lastActionFrame = false
+	c.action = Stand
+	c.bodyPart = sprites.BodyStandingPart
+	c.legsPart = sprites.LegsStandingPart
 }
 
 func (c *Marco) Draw() (*ebiten.Image, [2]int) {
-	legsImage, legsOptions, legsJoint := c.drawLegs()
+	nextLegsframe := (c.tick / c.sprite.Desc[c.legsPart].Speed) % c.sprite.Desc[c.legsPart].Frames
+	l := c.sprite.Desc[c.legsPart].Tiles[nextLegsframe]
+	legsImage := c.sprite.Image.SubImage(image.Rect(l.X0, l.Y0, l.X0+l.W, l.Y0+l.H)).(*ebiten.Image)
+	legsOptions := &ebiten.DrawImageOptions{}
+	legsJoint := l.Joint
 	legsW, legsH := legsImage.Size()
 
-	bodyImage, bodyOptions, bodyJoint := c.drawBody()
+	nextBodyframe := (c.tick / c.sprite.Desc[c.bodyPart].Speed) % c.sprite.Desc[c.bodyPart].Frames
+	b := c.sprite.Desc[c.bodyPart].Tiles[nextBodyframe]
+	bodyImage := c.sprite.Image.SubImage(image.Rect(b.X0, b.Y0, b.X0+b.W, b.Y0+b.H)).(*ebiten.Image)
+	bodyOptions := &ebiten.DrawImageOptions{}
+	bodyJoint := b.Joint
 	bodyW, _ := bodyImage.Size()
+
+	if nextBodyframe == c.sprite.Desc[c.bodyPart].Frames-1 {
+		c.lastActionFrame = true
+	}
 
 	// body and legs can move right/left during an animation, creating difference of size
 	// so we take into account that difference to calculate to total width of the image and its
@@ -131,32 +175,4 @@ func (c *Marco) Draw() (*ebiten.Image, [2]int) {
 	}
 
 	return marco, bodyJoint
-}
-
-func (c *Marco) drawBody() (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
-	a := c.CurrentAction()
-	var part sprites.SpriteName
-	if a == Stand {
-		part = sprites.BodyStandingPart
-	} else if a == Shoot {
-		part = sprites.BodyShootingPart
-	} else if a == Knife {
-		part = sprites.BodyKnifePart
-	} else if a == KnifeUp {
-		part = sprites.BodyKnifeUpPart
-	}
-	return c.drawPart(part)
-}
-
-func (c *Marco) drawLegs() (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
-	return c.drawPart(sprites.LegsStandingPart)
-}
-
-func (c *Marco) drawPart(part sprites.SpriteName) (*ebiten.Image, *ebiten.DrawImageOptions, [2]int) {
-	s := c.sprite.Desc[part]
-	// Number of frames for this part
-	frame := (c.currentFrame / s.Speed) % s.Frames
-	c.firstFrame = frame == 0
-	t := s.Tiles[frame]
-	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), &ebiten.DrawImageOptions{}, t.Joint
 }
