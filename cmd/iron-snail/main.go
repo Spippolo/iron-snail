@@ -46,18 +46,25 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	} else if ebiten.IsKeyPressed(ebiten.KeyW) {
 		action = characters.KnifeUp
 	}
+	var generateBullet bool
+	if action != g.character.CurrentAction() {
+		err := g.character.MakeAction(action)
+		utils.CheckErr(err, "Action failed")
+		if action == characters.Shoot {
+			generateBullet = true
+		}
+	}
 	g.character.Update()
+	if g.character.FirstFrame() && g.character.CurrentAction() == characters.Shoot {
+		generateBullet = true
+	}
 	for _, b := range g.bullets {
 		b.Update()
 		// TODO: Delete bullet if out of the screen
 	}
-	if action != g.character.CurrentAction() {
-		err := g.character.MakeAction(action)
-		if action == characters.Shoot {
-			b := weapons.NewBullet(g.character.CurrentWeapon(), g.character.GetDirection())
-			g.bullets = append(g.bullets, b)
-		}
-		utils.CheckErr(err, "Action failed")
+	if generateBullet {
+		b := weapons.NewBullet(g.character.CurrentWeapon(), g.character.GetDirection())
+		g.bullets = append(g.bullets, b)
 	}
 	if direction != g.character.CurrentDirection() {
 		err := g.character.SetDirection(direction)

@@ -23,6 +23,7 @@ type Character interface {
 	GetDirection() common.Direction
 	SetDirection(d common.Direction) error
 	CurrentDirection() common.Direction
+	FirstFrame() bool
 }
 
 type Action int
@@ -45,12 +46,14 @@ type Marco struct {
 	action       Action
 	direction    common.Direction
 	weapon       weapons.Weapon
+	firstFrame   bool
 }
 
 func NewMarco() *Marco {
 	return &Marco{
-		sprite: sprites.Marco(),
-		weapon: weapons.Gun,
+		sprite:     sprites.Marco(),
+		weapon:     weapons.Gun,
+		firstFrame: true,
 	}
 }
 
@@ -87,7 +90,12 @@ func (c *Marco) MakeAction(action Action) error {
 	// Reset the animation
 	// TODO: some actions can't be reset, like shooting, and must be completed before resetting
 	c.currentFrame = 0
+	c.firstFrame = true
 	return nil
+}
+
+func (c *Marco) FirstFrame() bool {
+	return c.firstFrame
 }
 
 func (c *Marco) Update() {
@@ -148,6 +156,7 @@ func (c *Marco) drawPart(part sprites.SpriteName) (*ebiten.Image, *ebiten.DrawIm
 	s := c.sprite.Desc[part]
 	// Number of frames for this part
 	frame := (c.currentFrame / s.Speed) % s.Frames
+	c.firstFrame = frame == 0
 	t := s.Tiles[frame]
 	return c.sprite.Image.SubImage(image.Rect(t.X0, t.Y0, t.X0+t.W, t.Y0+t.H)).(*ebiten.Image), &ebiten.DrawImageOptions{}, t.Joint
 }
