@@ -25,7 +25,7 @@ jobs:
     - name: Install packages
       run: |
         sudo apt update
-        sudo apt install -y xorg-dev build-essential libc6-dev libglu1-mesa-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev libasound2-dev pkg-config
+        sudo apt install -y  build-essential libalut-dev libasound2-dev libc6-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev mesa-utils pkg-config xorg-dev xvfb
 
     - name: Get dependencies
       run: |
@@ -39,7 +39,7 @@ jobs:
       env:
         DISPLAY: ":99.0"
       run: |
-        go test -race -v ./...
+        xvfb-run --auto-servernum  go test -race -v ./...
     - name: Build
       run: |
         cd cmd/iron-snail
