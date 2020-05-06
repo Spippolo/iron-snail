@@ -82,7 +82,9 @@ func (g *Game) drawBullets(screen *ebiten.Image) {
 func (g *Game) drawCharacter(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 	i, center := g.character.Draw()
-	op.GeoM.Translate(screenWidth/2-float64(center[0]), screenHeight/2-float64(center[1]))
+	_, h := i.Size()
+	p := g.character.CurrentPosition()
+	op.GeoM.Translate(p.X-float64(center[0]), screenHeight-p.Y-float64(h))
 	if err := screen.DrawImage(i, op); err != nil {
 		log.Fatal(err)
 	}

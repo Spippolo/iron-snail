@@ -23,6 +23,7 @@ type Character interface {
 	GetDirection() common.Direction
 	SetDirection(d common.Direction) error
 	CurrentDirection() common.Direction
+	CurrentPosition() *common.Position
 }
 
 type Action int
@@ -44,19 +45,25 @@ type Marco struct {
 	sprite          *sprites.Sprite
 	action          Action
 	direction       common.Direction
+	position        *common.Position
 	weapon          weapons.Weapon
 	bodyPart        sprites.SpriteName // Current body part to be drawn
 	legsPart        sprites.SpriteName // Current legs part to be drawn
 	lastActionFrame bool
 }
 
-func NewMarco() *Marco {
+func NewMarco(x, y float64) *Marco {
 	return &Marco{
 		sprite:   sprites.Marco(),
 		weapon:   weapons.Gun,
 		bodyPart: sprites.BodyStandingPart,
 		legsPart: sprites.LegsStandingPart,
+		position: &common.Position{X: x, Y: y},
 	}
+}
+
+func (c *Marco) CurrentPosition() *common.Position {
+	return c.position
 }
 
 func (c *Marco) CurrentWeapon() weapons.Weapon {

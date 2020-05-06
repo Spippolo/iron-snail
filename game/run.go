@@ -16,7 +16,7 @@ func Run() error {
 	ebiten.SetWindowTitle("Iron Snail")
 
 	return ebiten.RunGame(&Game{
-		character: characters.NewMarco(),
+		character: characters.NewMarco(50, 10),
 		weapons:   sprites.Weapons(),
 	})
 }
