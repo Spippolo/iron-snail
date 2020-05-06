@@ -32,8 +32,10 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		action = characters.Crouch
 	} else if ebiten.IsKeyPressed(ebiten.KeyRight) {
 		direction = common.East
+		action = characters.Walk
 	} else if ebiten.IsKeyPressed(ebiten.KeyLeft) {
 		direction = common.West
+		action = characters.Walk
 	} else if ebiten.IsKeyPressed(ebiten.KeyD) {
 		action = characters.Shoot
 	} else if ebiten.IsKeyPressed(ebiten.KeyE) {

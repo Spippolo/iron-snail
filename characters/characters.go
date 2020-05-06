@@ -111,12 +111,15 @@ func (c *Marco) MakeAction(action Action) bool {
 		c.bodyPart = sprites.BodyKnifePart
 	} else if action == KnifeUp {
 		c.bodyPart = sprites.BodyKnifeUpPart
-	} else {
-		log.Fatalf("Unknown action %v", action)
 	}
-	c.action = action
 
-	c.legsPart = sprites.LegsStandingPart
+	if action == Walk {
+		c.legsPart = sprites.LegsRunningPart
+	} else {
+		c.legsPart = sprites.LegsStandingPart
+	}
+
+	c.action = action
 
 	// Reset the animation
 	c.tick = 0
@@ -130,6 +133,15 @@ func (c *Marco) Update() {
 	// reset Marco to its rest position
 	if c.lastActionFrame {
 		c.resetAction()
+	}
+
+	if c.action == Walk {
+		var speed float64 = 1
+		var d float64 = 1
+		if c.direction == common.West {
+			d = -1
+		}
+		c.position.X += 1 * speed * d
 	}
 }
 
